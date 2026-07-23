@@ -192,10 +192,11 @@
 
   <div class="controls" style="margin-bottom:10px;">
     <button id="addAptBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;">+ Add apartment</button>
+    <button id="saveSharedBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:#2f5d50;color:#fff;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;">💾 Save (shared)</button>
     <button id="saveHtmlBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:#1c1f26;color:#fff;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;">⭳ Download updated file</button>
     <button id="resetBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:none;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:8px 14px;cursor:pointer;">Reset to defaults</button>
     <button id="refreshBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:none;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:8px 14px;cursor:pointer;">⟳ Refresh shared data</button>
-    <span style="color:var(--muted);font-size:12px;">× removes a row. Edits auto-save and sync to whoever else has this page open — click "Refresh shared data" to pull in their latest changes.</span>
+    <span style="color:var(--muted);font-size:12px;">× removes a row. Edits auto-save to this browser only — click "💾 Save (shared)" when you want others to see your changes, and "⟳ Refresh shared data" to pull in theirs.</span>
     <span id="saveStatus" style="color:var(--accent);font-size:11px;font-weight:600;"></span>
   </div>
 
@@ -277,16 +278,10 @@ try {
 }
 
 // ---- Shared server sync (Azure Function + Blob Storage) ----
-// The API stores one shared JSON blob: { data: [...apartments], settings: {...} }
-// Falls back silently to the localStorage-only behavior if /api/data isn't available.
-let _serverSaveTimer = null;
+// Each save creates a brand-new timestamped file; GET always returns the most recent one.
+// Nothing is pushed automatically — the "Save (shared)" button below is the only trigger,
+// so a stale tab or a bad save can never silently clobber someone else's newer data.
 let _applyingServerData = false;
-
-function scheduleServerSave(){
-  if(_applyingServerData) return; // don't echo back data we just received from the server
-  clearTimeout(_serverSaveTimer);
-  _serverSaveTimer = setTimeout(pushToServer, 600);
-}
 
 async function pushToServer(){
   try {
@@ -297,8 +292,10 @@ async function pushToServer(){
       body: JSON.stringify(payload)
     });
     if(res.ok) flashSaved('Saved ✓ (shared)');
+    else flashSaved('Save failed ✗');
   } catch(e) {
     console.error('Failed to save to shared server storage, kept local copy only', e);
+    flashSaved('Save failed ✗');
   }
 }
 
@@ -335,10 +332,6 @@ async function loadFromServer(){
 function saveData(){
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    if(!_applyingServerData){
-      flashSaved();
-      scheduleServerSave();
-    }
   } catch(e) {
     console.error('Failed to save apartment data', e);
   }
@@ -348,10 +341,6 @@ function saveSettingsToStorage(){
   try {
     const s = getSettings();
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-    if(!_applyingServerData){
-      flashSaved();
-      scheduleServerSave();
-    }
   } catch(e) {
     console.error('Failed to save settings', e);
   }
@@ -662,6 +651,10 @@ document.getElementById('saveHtmlBtn').addEventListener('click', ()=>{
     console.error('Failed to generate downloadable file', e);
     alert('Something went wrong generating the file — check the browser console for details.');
   }
+});
+
+document.getElementById('saveSharedBtn').addEventListener('click', ()=>{
+  pushToServer();
 });
 
 document.getElementById('refreshBtn').addEventListener('click', ()=>{
