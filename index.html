@@ -182,6 +182,8 @@
     <span>Orly:</span><input type="number" id="freqOrly" value="0.25" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
     <span>CDG:</span><input type="number" id="freqCdg" value="0.16" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
     <span>Basic-Fit:</span><input type="number" id="freqBasicfit" value="15" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>Bastille:</span><input type="number" id="freqBastille" value="13" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>Choisy Artelia:</span><input type="number" id="freqChoisyArtelia" value="8.66" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
     <span style="border-left:1px solid #c7d3cc;height:20px;margin:0 4px;"></span>
     <label>Energy price —</label>
     <span>Elec:</span><input type="number" id="electricityRate" value="0.19" min="0" step="any" style="width:52px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;"><span>€/kWh</span>
@@ -206,6 +208,7 @@
         <th>Furnished</th>
         <th>Rent /mo</th>
         <th>Agency fee</th>
+        <th>Charges /mo</th>
         <th>Surface m²</th>
         <th>Heating / source</th>
         <th>Elec class</th>
@@ -220,6 +223,8 @@
         <th>→ Orly</th>
         <th>→ CDG</th>
         <th>→ Basic-Fit</th>
+        <th>→ Bastille</th>
+        <th>→ Choisy Artelia</th>
         <th>2yr time cost†</th>
         <th>Total true cost</th>
       </tr>
@@ -228,9 +233,9 @@
   </table>
 
   <p class="footnote">
-    *2-year rent+furniture+energy = rent × 24, plus a one-time ~€5,000 furniture estimate for unfurnished units, plus the one-time agency fee (frais d'agence, "charge agence" — charged by some agencies on entry, not others; enter 0 if none), plus (elec €/mo + gas €/mo) × 24. <b>Electricity always applies</b> regardless of heating type (lighting, appliances, plugs are always billed to the tenant) — pick an Elec class for every apartment. <b>Gas only applies when heating is "Individual · Gas heating"</b> — if heating is collective or individual-electric, gas is "n/a" (no separate gas bill; collective heating cost is already bundled into the rent shown as charges). Each cost = DPE class midpoint (kWh/m²/year — A≈50, B≈90, C≈150, D≈215, E≈290, F≈375, G≈450) × apartment surface × your price per kWh, divided by 12.<br>
-    †Time cost = (client min × client trips/mo + Station F min × Station F trips/mo + St-Lazare min × St-Lazare trips/mo + Beauvais min × Beauvais trips/mo + Orly min × Orly trips/mo + CDG min × CDG trips/mo + Basic-Fit min × Basic-Fit trips/mo) × 2 (round trip) × 12 months × 2 years × your €/hour rate. All boxes accept decimals, so adjust to match your real routine.<br>
-    Total true cost = rent+furniture+energy + time cost. Lowest wins. Rows with incomplete Client/Station F/St-Lazare/Beauvais/Orly/CDG/Basic-Fit times are pushed to the bottom until filled in.
+    *2-year rent+furniture+energy = rent × 24, plus monthly charges (charges locatives — copro/maintenance charges billed on top of rent every month, not to be confused with the one-time agency fee) × 24, plus a one-time ~€5,000 furniture estimate for unfurnished units, plus the one-time agency fee (frais d'agence, "charge agence" — charged by some agencies on entry, not others; enter 0 if none), plus (elec €/mo + gas €/mo) × 24. <b>Electricity always applies</b> regardless of heating type (lighting, appliances, plugs are always billed to the tenant) — pick an Elec class for every apartment. <b>Gas only applies when heating is "Individual · Gas heating"</b> — if heating is collective or individual-electric, gas is "n/a" (no separate gas bill; collective heating cost is already bundled into the rent shown as charges). Each cost = DPE class midpoint (kWh/m²/year — A≈50, B≈90, C≈150, D≈215, E≈290, F≈375, G≈450) × apartment surface × your price per kWh, divided by 12.<br>
+    †Time cost = (client min × client trips/mo + Station F min × Station F trips/mo + St-Lazare min × St-Lazare trips/mo + Beauvais min × Beauvais trips/mo + Orly min × Orly trips/mo + CDG min × CDG trips/mo + Basic-Fit min × Basic-Fit trips/mo + Bastille min × Bastille trips/mo + Choisy Artelia min × Choisy Artelia trips/mo) × 2 (round trip) × 12 months × 2 years × your €/hour rate. Bastille defaults to 3×/week and Choisy Artelia to 2×/week (≈13 and ≈8.66 round trips/month) — all boxes accept decimals, so adjust to match your real routine.<br>
+    Total true cost = rent+furniture+charges+energy + time cost. Lowest wins. Rows with incomplete Client/Station F/St-Lazare/Beauvais/Orly/CDG/Basic-Fit/Bastille/Choisy Artelia times are pushed to the bottom until filled in.
   </p>
 </div>
 
@@ -242,15 +247,15 @@ const STORAGE_KEY = 'apartmentComparisonData_v1';
 const SETTINGS_KEY = 'apartmentComparisonSettings_v1';
 
 const defaultData = [
-  withId({name:"Ivry-sur-Seine, T3 65.6m² (4min walk M7 Pierre et Marie Curie)", furnished:false, agencyFee:0, rent:1550, surface:65.6, elecClass:"C", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3228767251", client:50, stationF:25, lazare:35, beauvais:45, orly:30, cdg:70, basicfit:4}),
-  withId({name:"Ivry-sur-Seine, T3 60m² (\"porte de Paris\", near M7 south)", furnished:false, agencyFee:0, rent:1290, surface:60, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.leboncoin.fr/ad/locations/3230921050", client:60, stationF:25, lazare:45, beauvais:48, orly:40, cdg:80, basicfit:10}),
-  withId({name:"Ivry-sur-Seine, T3 76m² (300m walk to M7)", furnished:true, agencyFee:0, rent:1764, surface:76, elecClass:"D", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3229343762", client:60, stationF:25, lazare:35, beauvais:45, orly:35, cdg:80, basicfit:12}),
-  withId({name:"Vitry-sur-Seine, T3 65.32m² (8min walk, RER C)", furnished:false, agencyFee:0, rent:1450, surface:65.32, elecClass:"B", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-vitry-sur-seine-94400-r464300876", client:70, stationF:35, lazare:40, beauvais:60, orly:40, cdg:80, basicfit:10}),
-  withId({name:"Paris 13e, Rue du Javelot, 70m² (Olympiades M14 / Tolbiac M7)", furnished:true, agencyFee:0, rent:2350, surface:70, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-paris-13e-75013-r464300445", client:40, stationF:15, lazare:20, beauvais:30, orly:25, cdg:60, basicfit:10}),
-  withId({name:"Paris 13e, Gobelins, 55m² (Gobelins M7 / Campo-Formio M5)", furnished:true, agencyFee:0, rent:2200, surface:55, elecClass:"D", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-paris-13e-75013-r464300543", client:38, stationF:20, lazare:25, beauvais:30, orly:30, cdg:60, basicfit:10}),
-  withId({name:"Choisy-le-Roi, 64.8m² (10min walk, RER C)", furnished:false, agencyFee:0, rent:1280, surface:64.8, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-choisy-le-roi-94600-r462502982", client:90, stationF:40, lazare:45, beauvais:60, orly:45, cdg:90, basicfit:25}),
-  withId({name:"Créteil Pointe du Lac, 77m² (2min walk M8)", furnished:false, agencyFee:0, rent:1480, surface:77, elecClass:"C", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3230372002", client:70, stationF:40, lazare:55, beauvais:55, orly:45, cdg:85, basicfit:15}),
-  withId({name:"Montfermeil, T3 50m² (furnished)", furnished:true, agencyFee:0, rent:830, surface:50, elecClass:"D", gazClass:"", energySource:"collective", link:"", client:90, stationF:90, lazare:60, beauvais:65, orly:90, cdg:70, basicfit:15}),
+  withId({name:"Ivry-sur-Seine, T3 65.6m² (4min walk M7 Pierre et Marie Curie)", furnished:false, agencyFee:0, charges:0, rent:1550, surface:65.6, elecClass:"C", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3228767251", client:50, stationF:25, lazare:35, beauvais:45, orly:30, cdg:70, basicfit:4, bastille:null, choisyArtelia:null}),
+  withId({name:"Ivry-sur-Seine, T3 60m² (\"porte de Paris\", near M7 south)", furnished:false, agencyFee:0, charges:0, rent:1290, surface:60, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.leboncoin.fr/ad/locations/3230921050", client:60, stationF:25, lazare:45, beauvais:48, orly:40, cdg:80, basicfit:10, bastille:null, choisyArtelia:null}),
+  withId({name:"Ivry-sur-Seine, T3 76m² (300m walk to M7)", furnished:true, agencyFee:0, charges:0, rent:1764, surface:76, elecClass:"D", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3229343762", client:60, stationF:25, lazare:35, beauvais:45, orly:35, cdg:80, basicfit:12, bastille:null, choisyArtelia:null}),
+  withId({name:"Vitry-sur-Seine, T3 65.32m² (8min walk, RER C)", furnished:false, agencyFee:0, charges:0, rent:1450, surface:65.32, elecClass:"B", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-vitry-sur-seine-94400-r464300876", client:70, stationF:35, lazare:40, beauvais:60, orly:40, cdg:80, basicfit:10, bastille:null, choisyArtelia:null}),
+  withId({name:"Paris 13e, Rue du Javelot, 70m² (Olympiades M14 / Tolbiac M7)", furnished:true, agencyFee:0, charges:0, rent:2350, surface:70, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-paris-13e-75013-r464300445", client:40, stationF:15, lazare:20, beauvais:30, orly:25, cdg:60, basicfit:10, bastille:null, choisyArtelia:null}),
+  withId({name:"Paris 13e, Gobelins, 55m² (Gobelins M7 / Campo-Formio M5)", furnished:true, agencyFee:0, charges:0, rent:2200, surface:55, elecClass:"D", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-paris-13e-75013-r464300543", client:38, stationF:20, lazare:25, beauvais:30, orly:30, cdg:60, basicfit:10, bastille:null, choisyArtelia:null}),
+  withId({name:"Choisy-le-Roi, 64.8m² (10min walk, RER C)", furnished:false, agencyFee:0, charges:0, rent:1280, surface:64.8, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-choisy-le-roi-94600-r462502982", client:90, stationF:40, lazare:45, beauvais:60, orly:45, cdg:90, basicfit:25, bastille:null, choisyArtelia:null}),
+  withId({name:"Créteil Pointe du Lac, 77m² (2min walk M8)", furnished:false, agencyFee:0, charges:0, rent:1480, surface:77, elecClass:"C", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3230372002", client:70, stationF:40, lazare:55, beauvais:55, orly:45, cdg:85, basicfit:15, bastille:null, choisyArtelia:null}),
+  withId({name:"Montfermeil, T3 50m² (furnished)", furnished:true, agencyFee:0, charges:0, rent:830, surface:50, elecClass:"D", gazClass:"", energySource:"collective", link:"", client:90, stationF:90, lazare:60, beauvais:65, orly:90, cdg:70, basicfit:15, bastille:null, choisyArtelia:null}),
 ];
 
 let data;
@@ -313,6 +318,7 @@ async function loadFromServer(){
       const map = {
         rate:'hourlyRate', freqClient:'freqClient', freqStationF:'freqStationF', freqLazare:'freqLazare',
         freqBeauvais:'freqBeauvais', freqOrly:'freqOrly', freqCdg:'freqCdg', freqBasicfit:'freqBasicfit',
+        freqBastille:'freqBastille', freqChoisyArtelia:'freqChoisyArtelia',
         electricityRate:'electricityRate', gasRate:'gasRate'
       };
       Object.entries(map).forEach(([sKey, elId])=>{
@@ -367,6 +373,7 @@ function loadSettingsFromStorage(){
     const map = {
       rate:'hourlyRate', freqClient:'freqClient', freqStationF:'freqStationF', freqLazare:'freqLazare',
       freqBeauvais:'freqBeauvais', freqOrly:'freqOrly', freqCdg:'freqCdg', freqBasicfit:'freqBasicfit',
+        freqBastille:'freqBastille', freqChoisyArtelia:'freqChoisyArtelia',
       electricityRate:'electricityRate', gasRate:'gasRate'
     };
     Object.entries(map).forEach(([sKey, elId])=>{
@@ -387,7 +394,8 @@ function twoYearRentFurnitureEnergyCost(d, s){
   const eCost = totalEnergyCost(d, s);
   const energyPart = eCost == null ? 0 : eCost * MONTHS; // treat unknown energy as 0 until filled in, flagged separately
   const agencyFee = d.agencyFee || 0; // one-time fee, not amortized/multiplied
-  return d.rent * MONTHS + (d.furnished ? 0 : FURNITURE_COST) + agencyFee + energyPart;
+  const charges = d.charges || 0; // monthly recurring charges (charges locatives), amortized like rent
+  return d.rent * MONTHS + charges * MONTHS + (d.furnished ? 0 : FURNITURE_COST) + agencyFee + energyPart;
 }
 
 function electricityCost(d, s){
@@ -411,8 +419,8 @@ function totalEnergyCost(d, s){
 }
 
 function totalTime(d){
-  if(d.client==null || d.stationF==null || d.lazare==null || d.beauvais==null || d.orly==null || d.cdg==null || d.basicfit==null) return null;
-  return d.client + d.stationF + d.lazare + d.beauvais + d.orly + d.cdg + d.basicfit;
+  if(d.client==null || d.stationF==null || d.lazare==null || d.beauvais==null || d.orly==null || d.cdg==null || d.basicfit==null || d.bastille==null || d.choisyArtelia==null) return null;
+  return d.client + d.stationF + d.lazare + d.beauvais + d.orly + d.cdg + d.basicfit + d.bastille + d.choisyArtelia;
 }
 
 function getSettings(){
@@ -425,6 +433,8 @@ function getSettings(){
     freqOrly: Math.max(0, parseFloat(document.getElementById('freqOrly').value) || 0),
     freqCdg: Math.max(0, parseFloat(document.getElementById('freqCdg').value) || 0),
     freqBasicfit: Math.max(0, parseFloat(document.getElementById('freqBasicfit').value) || 0),
+    freqBastille: Math.max(0, parseFloat(document.getElementById('freqBastille').value) || 0),
+    freqChoisyArtelia: Math.max(0, parseFloat(document.getElementById('freqChoisyArtelia').value) || 0),
     electricityRate: Math.max(0, parseFloat(document.getElementById('electricityRate').value) || 0),
     gasRate: Math.max(0, parseFloat(document.getElementById('gasRate').value) || 0),
   };
@@ -434,7 +444,7 @@ function timeCost(d, s){
   if(totalTime(d) === null) return null;
   const monthlyMinutes = (d.client * s.freqClient) + (d.stationF * s.freqStationF) + (d.lazare * s.freqLazare)
                         + (d.beauvais * s.freqBeauvais) + (d.orly * s.freqOrly) + (d.cdg * s.freqCdg)
-                        + (d.basicfit * s.freqBasicfit);
+                        + (d.basicfit * s.freqBasicfit) + (d.bastille * s.freqBastille) + (d.choisyArtelia * s.freqChoisyArtelia);
   const monthlyMinutesRoundTrip = monthlyMinutes * 2; // there and back
   const totalMinutes = monthlyMinutesRoundTrip * 12 * 2; // 2 years
   const totalHours = totalMinutes / 60;
@@ -503,7 +513,7 @@ function render(){
     inp.addEventListener('change', (e)=>{
       const idx = parseInt(e.target.dataset.idx,10);
       const field = e.target.dataset.field;
-      if(field === 'rent' || field === 'surface'){
+      if(field === 'rent' || field === 'surface' || field === 'charges'){
         data[idx][field] = Math.max(0, parseFloat(e.target.value) || 0);
       } else if(field === 'agencyFee'){
         data[idx][field] = Math.max(0, Math.round(parseFloat(e.target.value) || 0));
@@ -570,6 +580,7 @@ function rowHtml(d, rank, idx, rentCost, tCost, trueCost, time, eCost, gCost){
     </select></td>
     <td><input type="number" min="0" class="field-input" data-idx="${idx}" data-field="rent" value="${d.rent}" style="width:70px;"></td>
     <td><input type="number" min="0" step="1" class="field-input" data-idx="${idx}" data-field="agencyFee" value="${d.agencyFee ?? 0}" style="width:70px;" placeholder="0"></td>
+    <td><input type="number" min="0" step="any" class="field-input" data-idx="${idx}" data-field="charges" value="${d.charges ?? 0}" style="width:70px;" placeholder="0"></td>
     <td><input type="number" min="0" class="field-input" data-idx="${idx}" data-field="surface" value="${d.surface}" style="width:60px;"></td>
     <td><select class="energy-select" data-idx="${idx}" data-field="energySource" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;padding:4px;border-radius:4px;border:1px solid #b9c9c2;">${sourceOpts}</select></td>
     <td><select class="energy-select" data-idx="${idx}" data-field="elecClass" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;padding:4px;border-radius:4px;border:1px solid #b9c9c2;">${classOpts(d.elecClass)}</select></td>
@@ -584,12 +595,14 @@ function rowHtml(d, rank, idx, rentCost, tCost, trueCost, time, eCost, gCost){
     <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="orly" value="${d.orly ?? ''}" placeholder="min"></td>
     <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="cdg" value="${d.cdg ?? ''}" placeholder="min"></td>
     <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="basicfit" value="${d.basicfit ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="bastille" value="${d.bastille ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="choisyArtelia" value="${d.choisyArtelia ?? ''}" placeholder="min"></td>
     <td class="score-cell">${timeCostCell}${timeNote}</td>
     <td class="score-cell" style="font-size:15px;">${trueCostCell}</td>
   `;
 }
 
-['hourlyRate','freqClient','freqStationF','freqLazare','freqBeauvais','freqOrly','freqCdg','freqBasicfit','electricityRate','gasRate'].forEach(id=>{
+['hourlyRate','freqClient','freqStationF','freqLazare','freqBeauvais','freqOrly','freqCdg','freqBasicfit','freqBastille','freqChoisyArtelia','electricityRate','gasRate'].forEach(id=>{
   document.getElementById(id).addEventListener('input', ()=>{
     saveSettingsToStorage();
     render();
@@ -601,6 +614,7 @@ document.getElementById('addAptBtn').addEventListener('click', ()=>{
     name: "New apartment",
     furnished: false,
     agencyFee: 0,
+    charges: 0,
     rent: 0,
     surface: 50,
     elecClass: "",
@@ -608,7 +622,7 @@ document.getElementById('addAptBtn').addEventListener('click', ()=>{
     energySource: "",
     link: "",
     client: null, stationF: null, lazare: null, beauvais: null, orly: null, cdg: null,
-    basicfit: null,
+    basicfit: null, bastille: null, choisyArtelia: null,
   }));
   render();
 });
@@ -626,6 +640,7 @@ document.getElementById('saveHtmlBtn').addEventListener('click', ()=>{
     const idToVal = {
       hourlyRate: s.rate, freqClient: s.freqClient, freqStationF: s.freqStationF, freqLazare: s.freqLazare,
       freqBeauvais: s.freqBeauvais, freqOrly: s.freqOrly, freqCdg: s.freqCdg, freqBasicfit: s.freqBasicfit,
+      freqBastille: s.freqBastille, freqChoisyArtelia: s.freqChoisyArtelia,
       electricityRate: s.electricityRate, gasRate: s.gasRate
     };
     Object.entries(idToVal).forEach(([id, val])=>{
