@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Apartment Comparison</title>
+<style>
+  :root{
+    --ink:#1c1f26;
+    --paper:#fafaf8;
+    --line:#dcdad3;
+    --accent:#2f5d50;
+    --accent-soft:#e4efe9;
+    --warn:#b3541e;
+    --muted:#6b6f76;
+    --input-bg:#fff9e6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Georgia','Iowan Old Style',serif;
+    padding:28px 20px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+  h1{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.02em;
+    margin:0 0 4px;
+  }
+  .sub{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    color:var(--muted);
+    font-size:13px;
+    margin:0 0 20px;
+    line-height:1.5;
+  }
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    background:var(--accent-soft);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 16px;
+    margin-bottom:18px;
+  }
+  .controls label{color:var(--accent);font-weight:600;}
+  .controls input[type=range]{vertical-align:middle;width:180px;}
+  .controls .val{font-weight:700;color:var(--ink);min-width:70px;display:inline-block;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:#fff;
+    border:1px solid var(--line);
+    font-size:13.5px;
+  }
+  thead th{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    background:var(--ink);
+    color:#fff;
+    text-align:left;
+    padding:10px 8px;
+    font-weight:600;
+    font-size:11.5px;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:9px 8px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+  tbody tr:hover{background:#fbfaf6;}
+  .rank{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--accent);
+    text-align:center;
+    width:28px;
+  }
+  .apt-name{max-width:230px;line-height:1.35;}
+  .apt-name a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--muted);}
+  .apt-name a:hover{color:var(--accent);}
+  .furnished-tag{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:10.5px;
+    font-weight:600;
+    padding:2px 7px;
+    border-radius:10px;
+    white-space:nowrap;
+  }
+  .furnished-tag.yes{background:#e4efe9;color:var(--accent);}
+  .furnished-tag.no{background:#f1ece0;color:var(--warn);}
+  .price{font-weight:700;white-space:nowrap;}
+  input.time-input{
+    width:56px;
+    padding:5px 6px;
+    border:1px solid #d8c98f;
+    background:var(--input-bg);
+    border-radius:4px;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    text-align:center;
+  }
+  input.time-input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .total-time{font-family:'Helvetica Neue',Arial,sans-serif;font-weight:700;}
+  .score-cell{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-weight:700;
+    text-align:right;
+    white-space:nowrap;
+  }
+  .bar-bg{
+    height:6px;
+    background:#eee;
+    border-radius:3px;
+    margin-top:4px;
+    overflow:hidden;
+    width:100%;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--accent);
+    border-radius:3px;
+  }
+  .missing{color:#b3541e;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;}
+  .remove-btn{
+    background:none;
+    border:none;
+    color:#b3541e;
+    font-size:18px;
+    font-weight:700;
+    cursor:pointer;
+    line-height:1;
+    padding:2px 6px;
+    border-radius:4px;
+  }
+  .remove-btn:hover{background:#f1ece0;}
+  input.field-input{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:13px;
+    padding:5px 6px;
+    border:1px solid #cfd0cc;
+    border-radius:4px;
+  }
+  .name-input{width:100%;font-weight:600;margin-bottom:4px;}
+  .link-input{width:100%;font-size:11px;color:var(--muted);}
+  .footnote{
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:14px;
+    line-height:1.6;
+  }
+  .best-row{background:#f3f8f5 !important;}
+  .best-row td:first-child{position:relative;}
+  .medal{font-size:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Apartment Comparison — fill in your travel times</h1>
+  <p class="sub">Type the minutes you get from Google Maps / Citymapper into the yellow boxes (transit, typical weekday). The table re-ranks itself live as you type. Assumes a 2-year stay (furniture ≈ €5,000 one-time for unfurnished places, amortized into the score).</p>
+
+  <div class="controls">
+    <label for="hourlyRate">Value of your time</label>
+    <span>€</span><input type="number" id="hourlyRate" value="50" min="0" step="any" style="width:56px;padding:5px 6px;border:1px solid #b9c9c2;border-radius:4px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;text-align:center;"><span>/hour</span>
+    <span style="border-left:1px solid #c7d3cc;height:20px;margin:0 4px;"></span>
+    <label>Round trips/month (decimals OK, e.g. 0.3) —</label>
+    <span>Client:</span><input type="number" id="freqClient" value="4" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>Station F:</span><input type="number" id="freqStationF" value="6" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>St-Lazare:</span><input type="number" id="freqLazare" value="1" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>Beauvais:</span><input type="number" id="freqBeauvais" value="0.33" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>Orly:</span><input type="number" id="freqOrly" value="0.25" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>CDG:</span><input type="number" id="freqCdg" value="0.16" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span>Basic-Fit:</span><input type="number" id="freqBasicfit" value="15" min="0" step="any" style="width:48px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;">
+    <span style="border-left:1px solid #c7d3cc;height:20px;margin:0 4px;"></span>
+    <label>Energy price —</label>
+    <span>Elec:</span><input type="number" id="electricityRate" value="0.19" min="0" step="any" style="width:52px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;"><span>€/kWh</span>
+    <span>Gas:</span><input type="number" id="gasRate" value="0.12" min="0" step="any" style="width:52px;padding:5px 4px;border:1px solid #b9c9c2;border-radius:4px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;"><span>€/kWh</span>
+  </div>
+
+  <div class="controls" style="margin-bottom:10px;">
+    <button id="addAptBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;">+ Add apartment</button>
+    <button id="saveHtmlBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:#1c1f26;color:#fff;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;">⭳ Download updated file</button>
+    <button id="resetBtn" style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:600;font-size:13px;background:none;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:8px 14px;cursor:pointer;">Reset to defaults</button>
+    <span style="color:var(--muted);font-size:12px;">× removes a row. Edits auto-save to this browser — click "Download updated file" for a portable copy with your current data baked in.</span>
+    <span id="saveStatus" style="color:var(--accent);font-size:11px;font-weight:600;"></span>
+  </div>
+
+  <table id="aptTable">
+    <thead>
+      <tr>
+        <th></th>
+        <th>#</th>
+        <th>Apartment</th>
+        <th>Furnished</th>
+        <th>Rent /mo</th>
+        <th>Surface m²</th>
+        <th>Heating / source</th>
+        <th>Elec class</th>
+        <th>Elec €/mo</th>
+        <th>Gas class</th>
+        <th>Gas €/mo</th>
+        <th>2yr rent+furniture+energy*</th>
+        <th>→ Client<br>(Levallois)</th>
+        <th>→ Station F</th>
+        <th>→ St-Lazare</th>
+        <th>→ Beauvais</th>
+        <th>→ Orly</th>
+        <th>→ CDG</th>
+        <th>→ Basic-Fit</th>
+        <th>2yr time cost†</th>
+        <th>Total true cost</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <p class="footnote">
+    *2-year rent+furniture+energy = rent × 24, plus a one-time ~€5,000 furniture estimate for unfurnished units, plus (elec €/mo + gas €/mo) × 24. <b>Electricity always applies</b> regardless of heating type (lighting, appliances, plugs are always billed to the tenant) — pick an Elec class for every apartment. <b>Gas only applies when heating is "Individual · Gas heating"</b> — if heating is collective or individual-electric, gas is "n/a" (no separate gas bill; collective heating cost is already bundled into the rent shown as charges). Each cost = DPE class midpoint (kWh/m²/year — A≈50, B≈90, C≈150, D≈215, E≈290, F≈375, G≈450) × apartment surface × your price per kWh, divided by 12.<br>
+    †Time cost = (client min × client trips/mo + Station F min × Station F trips/mo + St-Lazare min × St-Lazare trips/mo + Beauvais min × Beauvais trips/mo + Orly min × Orly trips/mo + CDG min × CDG trips/mo + Basic-Fit min × Basic-Fit trips/mo) × 2 (round trip) × 12 months × 2 years × your €/hour rate. All boxes accept decimals, so adjust to match your real routine.<br>
+    Total true cost = rent+furniture+energy + time cost. Lowest wins. Rows with incomplete Client/Station F/St-Lazare/Beauvais/Orly/CDG/Basic-Fit times are pushed to the bottom until filled in.
+  </p>
+</div>
+
+<script>
+let nextId = 0;
+function withId(obj){ return {...obj, _id: nextId++}; }
+
+const STORAGE_KEY = 'apartmentComparisonData_v1';
+const SETTINGS_KEY = 'apartmentComparisonSettings_v1';
+
+const defaultData = [
+  withId({name:"Ivry-sur-Seine, T3 65.6m² (4min walk M7 Pierre et Marie Curie)", furnished:false, rent:1550, surface:65.6, elecClass:"C", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3228767251", client:50, stationF:25, lazare:35, beauvais:45, orly:30, cdg:70, basicfit:4}),
+  withId({name:"Ivry-sur-Seine, T3 60m² (\"porte de Paris\", near M7 south)", furnished:false, rent:1290, surface:60, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.leboncoin.fr/ad/locations/3230921050", client:60, stationF:25, lazare:45, beauvais:48, orly:40, cdg:80, basicfit:10}),
+  withId({name:"Ivry-sur-Seine, T3 76m² (300m walk to M7)", furnished:true, rent:1764, surface:76, elecClass:"D", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3229343762", client:60, stationF:25, lazare:35, beauvais:45, orly:35, cdg:80, basicfit:12}),
+  withId({name:"Vitry-sur-Seine, T3 65.32m² (8min walk, RER C)", furnished:false, rent:1450, surface:65.32, elecClass:"B", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-vitry-sur-seine-94400-r464300876", client:70, stationF:35, lazare:40, beauvais:60, orly:40, cdg:80, basicfit:10}),
+  withId({name:"Paris 13e, Rue du Javelot, 70m² (Olympiades M14 / Tolbiac M7)", furnished:true, rent:2350, surface:70, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-paris-13e-75013-r464300445", client:40, stationF:15, lazare:20, beauvais:30, orly:25, cdg:60, basicfit:10}),
+  withId({name:"Paris 13e, Gobelins, 55m² (Gobelins M7 / Campo-Formio M5)", furnished:true, rent:2200, surface:55, elecClass:"D", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-paris-13e-75013-r464300543", client:38, stationF:20, lazare:25, beauvais:30, orly:30, cdg:60, basicfit:10}),
+  withId({name:"Choisy-le-Roi, 64.8m² (10min walk, RER C)", furnished:false, rent:1280, surface:64.8, elecClass:"C", gazClass:"", energySource:"individual-electric", link:"https://www.pap.fr/annonces/appartement-choisy-le-roi-94600-r462502982", client:90, stationF:40, lazare:45, beauvais:60, orly:45, cdg:90, basicfit:25}),
+  withId({name:"Créteil Pointe du Lac, 77m² (2min walk M8)", furnished:false, rent:1480, surface:77, elecClass:"C", gazClass:"", energySource:"collective", link:"https://www.leboncoin.fr/ad/locations/3230372002", client:70, stationF:40, lazare:55, beauvais:55, orly:45, cdg:85, basicfit:15}),
+  withId({name:"Montfermeil, T3 50m² (furnished)", furnished:true, rent:830, surface:50, elecClass:"D", gazClass:"", energySource:"collective", link:"", client:90, stationF:90, lazare:60, beauvais:65, orly:90, cdg:70, basicfit:15}),
+];
+
+let data;
+try {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if(saved){
+    data = JSON.parse(saved);
+  } else {
+    data = defaultData;
+  }
+} catch(e) {
+  console.error('Failed to load saved apartment data, using defaults', e);
+  data = defaultData;
+}
+// keep nextId ahead of any existing ids (from storage or baked-in defaults) so future additions don't collide
+{
+  const maxId = data.reduce((m, d) => Math.max(m, d._id ?? -1), -1);
+  nextId = maxId + 1;
+}
+
+function saveData(){
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    flashSaved();
+  } catch(e) {
+    console.error('Failed to save apartment data', e);
+  }
+}
+
+function saveSettingsToStorage(){
+  try {
+    const s = getSettings();
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    flashSaved();
+  } catch(e) {
+    console.error('Failed to save settings', e);
+  }
+}
+
+function flashSaved(){
+  const el = document.getElementById('saveStatus');
+  if(!el) return;
+  el.textContent = 'Saved ✓';
+  clearTimeout(flashSaved._t);
+  flashSaved._t = setTimeout(()=>{ el.textContent = ''; }, 1200);
+}
+
+function loadSettingsFromStorage(){
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if(!saved) return;
+    const s = JSON.parse(saved);
+    const map = {
+      rate:'hourlyRate', freqClient:'freqClient', freqStationF:'freqStationF', freqLazare:'freqLazare',
+      freqBeauvais:'freqBeauvais', freqOrly:'freqOrly', freqCdg:'freqCdg', freqBasicfit:'freqBasicfit',
+      electricityRate:'electricityRate', gasRate:'gasRate'
+    };
+    Object.entries(map).forEach(([sKey, elId])=>{
+      if(s[sKey] != null) document.getElementById(elId).value = s[sKey];
+    });
+  } catch(e) {
+    console.error('Failed to load saved settings', e);
+  }
+}
+
+const FURNITURE_COST = 5000;
+const MONTHS = 24;
+
+// Approximate primary energy use per DPE class, kWh/m2/year (midpoint of each band)
+const DPE_KWH_PER_M2 = { A:50, B:90, C:150, D:215, E:290, F:375, G:450 };
+
+function twoYearRentFurnitureEnergyCost(d, s){
+  const eCost = totalEnergyCost(d, s);
+  const energyPart = eCost == null ? 0 : eCost * MONTHS; // treat unknown energy as 0 until filled in, flagged separately
+  return d.rent * MONTHS + (d.furnished ? 0 : FURNITURE_COST) + energyPart;
+}
+
+function electricityCost(d, s){
+  if(d.elecClass === '' || !DPE_KWH_PER_M2[d.elecClass]) return null; // not enough info yet
+  const annualKwh = DPE_KWH_PER_M2[d.elecClass] * d.surface;
+  return (annualKwh * s.electricityRate) / 12;
+}
+
+function gasCost(d, s){
+  if(d.energySource !== 'individual-gas') return 0; // collective (in charges) or individual-electric heating: no separate gas bill
+  if(d.gazClass === '' || !DPE_KWH_PER_M2[d.gazClass]) return null; // heating is gas but class not chosen yet
+  const annualKwh = DPE_KWH_PER_M2[d.gazClass] * d.surface;
+  return (annualKwh * s.gasRate) / 12;
+}
+
+function totalEnergyCost(d, s){
+  const e = electricityCost(d, s);
+  const g = gasCost(d, s);
+  if(e == null || g == null) return null;
+  return e + g;
+}
+
+function totalTime(d){
+  if(d.client==null || d.stationF==null || d.lazare==null || d.beauvais==null || d.orly==null || d.cdg==null || d.basicfit==null) return null;
+  return d.client + d.stationF + d.lazare + d.beauvais + d.orly + d.cdg + d.basicfit;
+}
+
+function getSettings(){
+  return {
+    rate: Math.max(0, parseFloat(document.getElementById('hourlyRate').value) || 0),
+    freqClient: Math.max(0, parseFloat(document.getElementById('freqClient').value) || 0),
+    freqStationF: Math.max(0, parseFloat(document.getElementById('freqStationF').value) || 0),
+    freqLazare: Math.max(0, parseFloat(document.getElementById('freqLazare').value) || 0),
+    freqBeauvais: Math.max(0, parseFloat(document.getElementById('freqBeauvais').value) || 0),
+    freqOrly: Math.max(0, parseFloat(document.getElementById('freqOrly').value) || 0),
+    freqCdg: Math.max(0, parseFloat(document.getElementById('freqCdg').value) || 0),
+    freqBasicfit: Math.max(0, parseFloat(document.getElementById('freqBasicfit').value) || 0),
+    electricityRate: Math.max(0, parseFloat(document.getElementById('electricityRate').value) || 0),
+    gasRate: Math.max(0, parseFloat(document.getElementById('gasRate').value) || 0),
+  };
+}
+
+function timeCost(d, s){
+  if(totalTime(d) === null) return null;
+  const monthlyMinutes = (d.client * s.freqClient) + (d.stationF * s.freqStationF) + (d.lazare * s.freqLazare)
+                        + (d.beauvais * s.freqBeauvais) + (d.orly * s.freqOrly) + (d.cdg * s.freqCdg)
+                        + (d.basicfit * s.freqBasicfit);
+  const monthlyMinutesRoundTrip = monthlyMinutes * 2; // there and back
+  const totalMinutes = monthlyMinutesRoundTrip * 12 * 2; // 2 years
+  const totalHours = totalMinutes / 60;
+  return totalHours * s.rate;
+}
+
+function render(){
+  saveData();
+  const s = getSettings();
+  const complete = data.filter(d => totalTime(d) !== null);
+  const incomplete = data.filter(d => totalTime(d) === null);
+
+  const scored = complete.map(d=>{
+    const rentCost = twoYearRentFurnitureEnergyCost(d, s);
+    const eCost = electricityCost(d, s);
+    const gCost = gasCost(d, s);
+    const tCost = timeCost(d, s);
+    const trueCost = rentCost + tCost;
+    return {...d, rentCost, eCost, gCost, tCost, trueCost, time: totalTime(d)};
+  });
+  scored.sort((a,b)=> a.trueCost - b.trueCost);
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  scored.forEach((d, i)=>{
+    const tr = document.createElement('tr');
+    if(i===0) tr.classList.add('best-row');
+    const origIndex = data.findIndex(x => x._id === d._id);
+    tr.innerHTML = rowHtml(d, i+1, origIndex, d.rentCost, d.tCost, d.trueCost, d.time, d.eCost, d.gCost);
+    tbody.appendChild(tr);
+  });
+
+  incomplete.forEach((d)=>{
+    const origIndex = data.indexOf(d);
+    const eCost = electricityCost(d, s);
+    const gCost = gasCost(d, s);
+    const tr = document.createElement('tr');
+    tr.innerHTML = rowHtml(d, '–', origIndex, twoYearRentFurnitureEnergyCost(d, s), null, null, null, eCost, gCost);
+    tbody.appendChild(tr);
+  });
+
+  // attach listeners
+  document.querySelectorAll('input.time-input').forEach(inp=>{
+    inp.addEventListener('change', (e)=>{
+      const idx = parseInt(e.target.dataset.idx,10);
+      const field = e.target.dataset.field;
+      const v = e.target.value.trim();
+      data[idx][field] = v === '' ? null : Math.max(0, parseFloat(v) || 0);
+      render();
+    });
+  });
+  document.querySelectorAll('select.energy-select').forEach(sel=>{
+    sel.addEventListener('change', (e)=>{
+      const idx = parseInt(e.target.dataset.idx,10);
+      const field = e.target.dataset.field;
+      if(field === 'furnished'){
+        data[idx][field] = e.target.value === 'true';
+      } else {
+        data[idx][field] = e.target.value;
+      }
+      render();
+    });
+  });
+  document.querySelectorAll('input.field-input').forEach(inp=>{
+    inp.addEventListener('change', (e)=>{
+      const idx = parseInt(e.target.dataset.idx,10);
+      const field = e.target.dataset.field;
+      if(field === 'rent' || field === 'surface'){
+        data[idx][field] = Math.max(0, parseFloat(e.target.value) || 0);
+      } else {
+        data[idx][field] = e.target.value;
+      }
+      render();
+    });
+  });
+  document.querySelectorAll('.remove-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const idx = parseInt(e.target.dataset.idx,10);
+      data.splice(idx, 1);
+      render();
+    });
+  });
+}
+
+function rowHtml(d, rank, idx, rentCost, tCost, trueCost, time, eCost, gCost){
+  const medal = rank===1 ? '<span class="medal">🏆</span> ' : '';
+  const timeCostCell = tCost==null
+    ? '<span class="missing">fill in times</span>'
+    : `€${Math.round(tCost).toLocaleString()}`;
+  const trueCostCell = trueCost==null
+    ? '<span class="missing">—</span>'
+    : `€${Math.round(trueCost).toLocaleString()}`;
+  const timeNote = time==null ? '' : `<div style="font-size:10.5px;color:var(--muted);font-weight:400;">${time} min/trip total</div>`;
+
+  const classOpts = (selected) => ['', 'A','B','C','D','E','F','G'].map(c=>
+    `<option value="${c}" ${selected===c?'selected':''}>${c===''?'?':c}</option>`
+  ).join('');
+  const sourceOpts = [
+    ['', '?'],
+    ['individual-electric', 'Individual · Elec heating'],
+    ['individual-gas', 'Individual · Gas heating'],
+    ['collective', 'Collective heating (in charges)'],
+  ].map(([v,label])=>`<option value="${v}" ${d.energySource===v?'selected':''}>${label}</option>`).join('');
+
+  const elecCostCell = eCost == null
+    ? '<span class="missing">select elec class</span>'
+    : `€${Math.round(eCost).toLocaleString()}`;
+
+  let gasCostCell;
+  if(d.energySource !== 'individual-gas'){
+    gasCostCell = '<span style="color:var(--accent);font-size:12px;">n/a</span>';
+  } else if(gCost == null){
+    gasCostCell = '<span class="missing">select gas class</span>';
+  } else {
+    gasCostCell = `€${Math.round(gCost).toLocaleString()}`;
+  }
+
+  const nameCell = `
+    <input type="text" class="field-input name-input" data-idx="${idx}" data-field="name" value="${d.name.replace(/"/g,'&quot;')}" placeholder="Apartment name / address">
+    <input type="text" class="field-input link-input" data-idx="${idx}" data-field="link" value="${(d.link||'').replace(/"/g,'&quot;')}" placeholder="link (optional)">
+  `;
+
+  return `
+    <td><button class="remove-btn" data-idx="${idx}" title="Remove this apartment">×</button></td>
+    <td class="rank">${medal}${rank}</td>
+    <td class="apt-name">${nameCell}</td>
+    <td><select class="energy-select" data-idx="${idx}" data-field="furnished" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;padding:4px;border-radius:4px;border:1px solid #b9c9c2;">
+      <option value="true" ${d.furnished?'selected':''}>Furnished</option>
+      <option value="false" ${!d.furnished?'selected':''}>Unfurnished</option>
+    </select></td>
+    <td><input type="number" min="0" class="field-input" data-idx="${idx}" data-field="rent" value="${d.rent}" style="width:70px;"></td>
+    <td><input type="number" min="0" class="field-input" data-idx="${idx}" data-field="surface" value="${d.surface}" style="width:60px;"></td>
+    <td><select class="energy-select" data-idx="${idx}" data-field="energySource" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;padding:4px;border-radius:4px;border:1px solid #b9c9c2;">${sourceOpts}</select></td>
+    <td><select class="energy-select" data-idx="${idx}" data-field="elecClass" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;padding:4px;border-radius:4px;border:1px solid #b9c9c2;">${classOpts(d.elecClass)}</select></td>
+    <td class="score-cell">${elecCostCell}</td>
+    <td><select class="energy-select" data-idx="${idx}" data-field="gazClass" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;padding:4px;border-radius:4px;border:1px solid #b9c9c2;" ${d.energySource!=='individual-gas'?'disabled':''}>${classOpts(d.gazClass)}</select></td>
+    <td class="score-cell">${gasCostCell}</td>
+    <td>€${rentCost.toLocaleString()}</td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="client" value="${d.client ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="stationF" value="${d.stationF ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="lazare" value="${d.lazare ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="beauvais" value="${d.beauvais ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="orly" value="${d.orly ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="cdg" value="${d.cdg ?? ''}" placeholder="min"></td>
+    <td><input type="number" min="0" class="time-input" data-idx="${idx}" data-field="basicfit" value="${d.basicfit ?? ''}" placeholder="min"></td>
+    <td class="score-cell">${timeCostCell}${timeNote}</td>
+    <td class="score-cell" style="font-size:15px;">${trueCostCell}</td>
+  `;
+}
+
+['hourlyRate','freqClient','freqStationF','freqLazare','freqBeauvais','freqOrly','freqCdg','freqBasicfit','electricityRate','gasRate'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{
+    saveSettingsToStorage();
+    render();
+  });
+});
+
+document.getElementById('addAptBtn').addEventListener('click', ()=>{
+  data.push(withId({
+    name: "New apartment",
+    furnished: false,
+    rent: 0,
+    surface: 50,
+    elecClass: "",
+    gazClass: "",
+    energySource: "",
+    link: "",
+    client: null, stationF: null, lazare: null, beauvais: null, orly: null, cdg: null,
+    basicfit: null,
+  }));
+  render();
+});
+
+document.getElementById('saveHtmlBtn').addEventListener('click', ()=>{
+  try {
+    const s = getSettings();
+    let html = document.documentElement.outerHTML;
+
+    // Bake current apartment data in as the new defaults
+    const dataJson = JSON.stringify(data, null, 2);
+    html = html.replace(/const defaultData = \[[\s\S]*?\n\];/, `const defaultData = ${dataJson};`);
+
+    // Bake current settings in as the new default input values
+    const idToVal = {
+      hourlyRate: s.rate, freqClient: s.freqClient, freqStationF: s.freqStationF, freqLazare: s.freqLazare,
+      freqBeauvais: s.freqBeauvais, freqOrly: s.freqOrly, freqCdg: s.freqCdg, freqBasicfit: s.freqBasicfit,
+      electricityRate: s.electricityRate, gasRate: s.gasRate
+    };
+    Object.entries(idToVal).forEach(([id, val])=>{
+      const re = new RegExp(`(id="${id}"[^>]*value=")[^"]*(")`);
+      html = html.replace(re, `$1${val}$2`);
+    });
+
+    const blob = new Blob([html], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'apartment_comparison.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flashSaved();
+  } catch(e) {
+    console.error('Failed to generate downloadable file', e);
+    alert('Something went wrong generating the file — check the browser console for details.');
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('Reset all apartments and settings back to the original defaults? This clears everything you\'ve added or edited in this browser.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SETTINGS_KEY);
+  location.reload();
+});
+
+loadSettingsFromStorage();
+render();
+</script>
+</body>
+</html>
